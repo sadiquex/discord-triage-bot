@@ -48,9 +48,24 @@ async function main() {
     logger.error({ err }, "Discord client error");
   });
 
+  client.on("shardError", (err, shardId) => {
+    logger.error({ err, shardId }, "Discord shard WebSocket error");
+  });
+
+  client.on("shardDisconnect", (event, shardId) => {
+    logger.warn({ code: event.code, reason: event.reason, shardId }, "Discord shard disconnected");
+  });
+
   // ── Login ───────────────────────────────────────────────────────────────────
   logger.info({ tokenLength: env.DISCORD_TOKEN.length, tokenPrefix: env.DISCORD_TOKEN.slice(0, 10) }, "Attempting Discord login");
+
+  const loginTimeout = setTimeout(() => {
+    logger.fatal("Discord login timed out after 30 seconds — check privileged intents in Discord Developer Portal");
+    process.exit(1);
+  }, 30_000);
+
   await client.login(env.DISCORD_TOKEN);
+  clearTimeout(loginTimeout);
   logger.info("Discord login successful");
 }
 
