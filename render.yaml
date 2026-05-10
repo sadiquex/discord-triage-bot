@@ -10,5 +10,29 @@ services:
         value: production
       - key: LOG_LEVEL
         value: info
+      - key: ISSUE_PREFIX
+        value: COM
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-4-7
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: CHANNEL_ISSUE_TRACKER
+        sync: false
+      - key: CHANNEL_TRIAGED_ISSUES
+        sync: false
+      - key: CHANNEL_IN_PROGRESS
+        sync: false
+      - key: CHANNEL_QA_TESTING
+        sync: false
+      - key: CHANNEL_RESOLVED
+        sync: false
+      - key: CHANNEL_RELEASE_NOTES
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
       - key: DATABASE_URL
         sync: false
