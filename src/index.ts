@@ -84,7 +84,7 @@ async function registerSlashCommands() {
 }
 
 const PORT = process.env.PORT ?? 3000;
-http.createServer((_, res) => { res.writeHead(200); res.end("ok"); }).listen(PORT);
+http.createServer((_, res) => { res.writeHead(200); res.end("ok"); }).listen(Number(PORT), "0.0.0.0");
 
 main().catch((err) => {
   logger.fatal({ err }, "Fatal error during startup");
