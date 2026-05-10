@@ -6,6 +6,7 @@ import {
   TextChannel,
 } from "discord.js";
 import { PrismaClient } from "@prisma/client";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { logger } from "../utils/logger";
 import type { AiService } from "../services/ai.service";
 import type { IssueService } from "../services/issue.service";
@@ -88,6 +89,10 @@ export function registerReactionAddEvent(
       const issueId = await generateIssueId(prisma, message.guildId, config.issuePrefix);
       await issueService.createIssue(parsed, message as any, issueId, config);
     } catch (err) {
+      if (err instanceof PrismaClientKnownRequestError && err.code === "P2002") {
+        logger.debug({ messageId: message.id }, "Race condition: issue already triaged by concurrent event");
+        return;
+      }
       logger.error({ err, messageId: message.id }, "Failed to triage issue");
       try {
         const channel = message.channel as TextChannel;

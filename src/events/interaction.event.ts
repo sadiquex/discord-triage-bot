@@ -20,7 +20,11 @@ export function registerInteractionEvent(
       const parsed = parseButtonId(interaction.customId);
       if (!parsed) return;
 
-      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      try {
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      } catch {
+        return;
+      }
 
       const { action, issueId } = parsed;
       const newStatus = actionToStatus(action);
@@ -112,7 +116,11 @@ async function handleSetupCommand(
   guildConfigRepo: GuildConfigRepository,
   cache: GuildConfigCache
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  } catch {
+    return;
+  }
 
   const prefix = interaction.options.getString("prefix", true).toUpperCase();
   const guild = interaction.guild!;
