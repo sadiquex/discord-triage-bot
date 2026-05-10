@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Issue {
+  id                String   @id @default(cuid())
+  issueId           String   @unique // e.g. "COM-142"
+  title             String
+  summary           String
+  severity          Severity @default(MEDIUM)
+  category          String
+  stepsToReproduce  Json? // string[]
+  status            Status   @default(BACKLOG)
+  reporterDiscordId String
+  reporterName      String
+  originalMsgId     String   @unique
+  originalChannelId String
+  triagedMsgId      String?
+  triagedChannelId  String?
+  threadId          String?
+  guildId           String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  resolvedAt        DateTime?
+
+  attachments Attachment[]
+  history     IssueHistory[]
+  release     Release?       @relation(fields: [releaseId], references: [id])
+  releaseId   String?
+}
+
+model Attachment {
+  id          String  @id @default(cuid())
+  url         String
+  filename    String
+  contentType String?
+  issueId     String
+  issue       Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
+}
+
+model IssueHistory {
+  id         String   @id @default(cuid())
+  issueId    String
+  issue      Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  fromStatus Status?
+  toStatus   Status
+  actorId    String
+  actorName  String
+  changedAt  DateTime @default(now())
+  note       String?
+}
+
+model Release {
+  id       String   @id @default(cuid())
+  version  String   @unique
+  notes    String
+  postedBy String
+  postedAt DateTime @default(now())
+  issues   Issue[]
+}
+
+enum Status {
+  BACKLOG
+  ACKNOWLEDGED
+  IN_PROGRESS
+  QA
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
