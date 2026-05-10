@@ -1,4 +1,4 @@
-import { Interaction } from "discord.js";
+import { Interaction, MessageFlags } from "discord.js";
 import { logger } from "../utils/logger";
 import { parseButtonId, actionToStatus } from "../services/formatter.service";
 import type { IssueService } from "../services/issue.service";
@@ -19,24 +19,18 @@ export function registerInteractionEvent(
       const { action, issueId } = parsed;
       const newStatus = actionToStatus(action);
 
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
       if (!newStatus) {
-        await interaction.reply({
-          content: `❓ Unknown action: \`${action}\``,
-          ephemeral: true,
-        });
+        await interaction.editReply(`❓ Unknown action: \`${action}\``);
         return;
       }
 
       const issue = await issueRepo.findByIssueId(issueId);
       if (!issue) {
-        await interaction.reply({
-          content: `❌ Issue **${issueId}** not found.`,
-          ephemeral: true,
-        });
+        await interaction.editReply(`❌ Issue **${issueId}** not found.`);
         return;
       }
-
-      await interaction.deferReply({ ephemeral: true });
 
       try {
         await issueService.updateStatus(interaction, issueId, newStatus, {
@@ -72,7 +66,7 @@ async function handleReleaseCommand(
 ): Promise<void> {
   const version = interaction.options.getString("version", true);
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const { release, channelUrl } = await releaseService.generateAndPost(
