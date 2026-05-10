@@ -87,9 +87,9 @@ export class IssueRepository {
     });
   }
 
-  async findUnreleased(): Promise<Issue[]> {
+  async findUnreleased(guildId: string): Promise<Issue[]> {
     return this.prisma.issue.findMany({
-      where: { status: Status.RESOLVED, releaseId: null },
+      where: { guildId, status: Status.RESOLVED, releaseId: null },
       include: { attachments: true, history: true },
       orderBy: { resolvedAt: "asc" },
     });

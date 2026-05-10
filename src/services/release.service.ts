@@ -19,7 +19,7 @@ export class ReleaseService {
     postedByName: string,
     config: GuildConfig
   ): Promise<{ release: Release; channelUrl: string }> {
-    const unreleased = await this.issueRepo.findUnreleased();
+    const unreleased = await this.issueRepo.findUnreleased(config.guildId);
 
     if (unreleased.length === 0) {
       throw new Error("No resolved issues available to release.");
