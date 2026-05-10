@@ -49,7 +49,9 @@ async function main() {
   });
 
   // ── Login ───────────────────────────────────────────────────────────────────
+  logger.info({ tokenLength: env.DISCORD_TOKEN.length, tokenPrefix: env.DISCORD_TOKEN.slice(0, 10) }, "Attempting Discord login");
   await client.login(env.DISCORD_TOKEN);
+  logger.info("Discord login successful");
 }
 
 async function registerSlashCommands() {
