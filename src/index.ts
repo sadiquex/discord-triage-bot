@@ -29,7 +29,7 @@ async function main() {
   const releaseService = new ReleaseService(client, aiService, issueRepo, releaseRepo);
 
   // ── Discord events ──────────────────────────────────────────────────────────
-  client.on("ready", async (readyClient) => {
+  client.on("clientReady", async (readyClient) => {
     logger.info({ tag: readyClient.user.tag }, "Bot is online");
     await registerSlashCommands();
   });
@@ -57,10 +57,10 @@ async function main() {
   });
 
   // ── Login ───────────────────────────────────────────────────────────────────
-  logger.info({ tokenLength: env.DISCORD_TOKEN.length, tokenPrefix: env.DISCORD_TOKEN.slice(0, 10) }, "Attempting Discord login");
+  logger.info({ tokenLength: env.DISCORD_TOKEN.length }, "Attempting Discord login");
 
   const loginTimeout = setTimeout(() => {
-    logger.fatal("Discord login timed out after 30 seconds — check privileged intents in Discord Developer Portal");
+    logger.fatal("Discord login timed out after 30 seconds");
     process.exit(1);
   }, 30_000);
 
@@ -83,7 +83,6 @@ async function registerSlashCommands() {
   }
 }
 
-// Keep Render's free web service alive (pinged by UptimeRobot every 5 min)
 const PORT = process.env.PORT ?? 3000;
 http.createServer((_, res) => { res.writeHead(200); res.end("ok"); }).listen(PORT);
 
