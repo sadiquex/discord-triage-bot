@@ -64,6 +64,19 @@ model Release {
   issues   Issue[]
 }
 
+model GuildConfig {
+  guildId             String   @id
+  issuePrefix         String
+  channelIssueTracker String
+  channelTriaged      String
+  channelInProgress   String
+  channelQa           String
+  channelResolved     String
+  channelReleaseNotes String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
 enum Status {
   BACKLOG
   ACKNOWLEDGED
