@@ -1,19 +1,11 @@
-import { Client, Message, TextChannel, Status as DiscordStatus } from "discord.js";
+import { Client, Message, TextChannel } from "discord.js";
 import { Status } from "@prisma/client";
-import { env } from "../config/env";
 import { logger } from "../utils/logger";
 import { buildIssueEmbed, buildActionRow } from "./formatter.service";
 import type { ThreadService } from "./thread.service";
 import type { IssueRepository } from "../repositories/issue.repository";
-import type { Issue } from "../types";
-import type { ParsedIssue, CreateIssueInput, StatusActor } from "../types";
+import type { Issue, ParsedIssue, CreateIssueInput, StatusActor, GuildConfig } from "../types";
 import type { ButtonInteraction } from "discord.js";
-
-const WORKFLOW_CHANNEL: Partial<Record<Status, string>> = {
-  [Status.IN_PROGRESS]: env.CHANNEL_IN_PROGRESS,
-  [Status.QA]: env.CHANNEL_QA_TESTING,
-  [Status.RESOLVED]: env.CHANNEL_RESOLVED,
-};
 
 export class IssueService {
   constructor(
@@ -25,7 +17,8 @@ export class IssueService {
   async createIssue(
     parsed: ParsedIssue,
     originalMessage: Message,
-    issueId: string
+    issueId: string,
+    config: GuildConfig
   ): Promise<Issue> {
     const attachments = [...originalMessage.attachments.values()].map((a) => ({
       url: a.url,
@@ -51,16 +44,13 @@ export class IssueService {
     let issue = await this.issueRepo.create(input);
 
     const triagedChannel = (await this.client.channels.fetch(
-      env.CHANNEL_TRIAGED_ISSUES
+      config.channelTriaged
     )) as TextChannel;
 
     const embed = buildIssueEmbed(issue as Issue & { attachments: { url: string; filename: string }[] });
     const row = buildActionRow(issue);
 
-    const triagedMsg = await triagedChannel.send({
-      embeds: [embed],
-      components: [row],
-    });
+    const triagedMsg = await triagedChannel.send({ embeds: [embed], components: [row] });
 
     const threadId = await this.threadService.createThread(triagedMsg, issueId);
 
@@ -83,32 +73,26 @@ export class IssueService {
     interaction: ButtonInteraction,
     issueId: string,
     newStatus: Status,
-    actor: StatusActor
+    actor: StatusActor,
+    config: GuildConfig
   ): Promise<void> {
     const updatedIssue = await this.issueRepo.updateStatus(issueId, newStatus, actor);
 
-    // Edit the canonical triaged embed in #triaged-issues
     if (updatedIssue.triagedMsgId && updatedIssue.triagedChannelId) {
       const channel = (await this.client.channels.fetch(
         updatedIssue.triagedChannelId
       )) as TextChannel;
-
       const triagedMsg = await channel.messages.fetch(updatedIssue.triagedMsgId);
-
       const embed = buildIssueEmbed(
         updatedIssue as Issue & { attachments: { url: string; filename: string }[] }
       );
       const row = buildActionRow(updatedIssue);
-
       await triagedMsg.edit({ embeds: [embed], components: [row] });
     }
 
-    // Post a compact notification to the workflow channel
-    const workflowChannelId = WORKFLOW_CHANNEL[newStatus];
+    const workflowChannelId = getWorkflowChannelId(newStatus, config);
     if (workflowChannelId) {
-      const workflowChannel = (await this.client.channels.fetch(
-        workflowChannelId
-      )) as TextChannel;
+      const workflowChannel = (await this.client.channels.fetch(workflowChannelId)) as TextChannel;
 
       const statusEmoji: Record<string, string> = {
         [Status.IN_PROGRESS]: "🛠️",
@@ -117,9 +101,10 @@ export class IssueService {
       };
 
       const emoji = statusEmoji[newStatus] ?? "🔄";
-      const jumpUrl = updatedIssue.triagedMsgId && updatedIssue.triagedChannelId
-        ? `https://discord.com/channels/${updatedIssue.guildId}/${updatedIssue.triagedChannelId}/${updatedIssue.triagedMsgId}`
-        : "";
+      const jumpUrl =
+        updatedIssue.triagedMsgId && updatedIssue.triagedChannelId
+          ? `https://discord.com/channels/${updatedIssue.guildId}/${updatedIssue.triagedChannelId}/${updatedIssue.triagedMsgId}`
+          : "";
 
       await workflowChannel.send(
         `${emoji} **${issueId}** — ${updatedIssue.title}\nUpdated by <@${actor.id}>${jumpUrl ? ` → [Jump to issue](${jumpUrl})` : ""}`
@@ -128,4 +113,13 @@ export class IssueService {
 
     logger.info({ issueId, newStatus, actor: actor.name }, "Issue status updated");
   }
+}
+
+function getWorkflowChannelId(status: Status, config: GuildConfig): string | undefined {
+  const map: Partial<Record<Status, string>> = {
+    [Status.IN_PROGRESS]: config.channelInProgress,
+    [Status.QA]: config.channelQa,
+    [Status.RESOLVED]: config.channelResolved,
+  };
+  return map[status];
 }
