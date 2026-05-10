@@ -1,3 +1,4 @@
+import http from "http";
 import { env } from "./config/env";
 import { logger } from "./utils/logger";
 import { client } from "./bot/client";
@@ -64,6 +65,10 @@ async function registerSlashCommands() {
     logger.error({ err }, "Failed to register slash commands");
   }
 }
+
+// Keep Render's free web service alive (pinged by UptimeRobot every 5 min)
+const PORT = process.env.PORT ?? 3000;
+http.createServer((_, res) => { res.writeHead(200); res.end("ok"); }).listen(PORT);
 
 main().catch((err) => {
   logger.fatal({ err }, "Fatal error during startup");

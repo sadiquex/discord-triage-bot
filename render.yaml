@@ -1,7 +1,8 @@
 services:
-  - type: worker
+  - type: web
     name: bugsy-bot
     runtime: node
+    plan: free
     buildCommand: npm install && npm run build && npx prisma generate
     startCommand: npx prisma migrate deploy && node dist/index.js
     envVars:
@@ -16,4 +17,4 @@ services:
 
 databases:
   - name: bugsy-db
-    plan: basic
+    plan: free
