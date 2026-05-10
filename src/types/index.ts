@@ -50,3 +50,18 @@ export interface ReleaseIssueItem {
   title: string;
   category: string;
 }
+
+// ─── GuildConfig ─────────────────────────────────────────────────────────────
+
+export type { GuildConfig } from "@prisma/client";
+
+export interface GuildConfigInput {
+  guildId: string;
+  issuePrefix: string;
+  channelIssueTracker: string;
+  channelTriaged: string;
+  channelInProgress: string;
+  channelQa: string;
+  channelResolved: string;
+  channelReleaseNotes: string;
+}
