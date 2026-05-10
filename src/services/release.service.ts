@@ -1,10 +1,9 @@
 import { Client, TextChannel, EmbedBuilder, Colors } from "discord.js";
-import { env } from "../config/env";
 import { logger } from "../utils/logger";
 import type { AiService } from "./ai.service";
 import type { IssueRepository } from "../repositories/issue.repository";
 import type { ReleaseRepository } from "../repositories/release.repository";
-import type { Release } from "../types";
+import type { Release, GuildConfig } from "../types";
 
 export class ReleaseService {
   constructor(
@@ -17,7 +16,8 @@ export class ReleaseService {
   async generateAndPost(
     version: string,
     postedById: string,
-    postedByName: string
+    postedByName: string,
+    config: GuildConfig
   ): Promise<{ release: Release; channelUrl: string }> {
     const unreleased = await this.issueRepo.findUnreleased();
 
@@ -50,18 +50,14 @@ export class ReleaseService {
     );
 
     const channel = (await this.client.channels.fetch(
-      env.CHANNEL_RELEASE_NOTES
+      config.channelReleaseNotes
     )) as TextChannel;
 
     const embed = new EmbedBuilder()
       .setTitle(`🚀 Release ${version}`)
       .setDescription(notes)
       .setColor(Colors.Blurple)
-      .addFields({
-        name: "Issues resolved",
-        value: String(unreleased.length),
-        inline: true,
-      })
+      .addFields({ name: "Issues resolved", value: String(unreleased.length), inline: true })
       .setTimestamp()
       .setFooter({ text: `Released by ${postedByName}` });
 
@@ -69,9 +65,6 @@ export class ReleaseService {
 
     logger.info({ version, issueCount: unreleased.length }, "Release posted");
 
-    return {
-      release,
-      channelUrl: msg.url,
-    };
+    return { release, channelUrl: msg.url };
   }
 }
